@@ -39,8 +39,22 @@ def on_intent(request, session):
     if intent_name == "ListSources":
         return listSources(request)
     elif intent_name == "SourcedNews":
+        if 'attributes' in session:
+            if 'intent' in session['attributes']:
+                if session['attributes']['intent'] == "Headlines":
+                    session['attributes']['intent'] = "switchToSource"
+                else:
+                    session['attributes']['intent'] = "sourcedNews"
+
         return sourcedNews(request, intent, session)
     elif intent_name == "Headlines":
+        if 'attributes' in session:
+            if 'intent' in session['attributes']:
+                if session['attributes']['intent'] == "sourcedNews":
+                    session['attributes']['intent'] = "switchToHeadlines"
+                else:
+                    session['attributes']['intent'] = "Headlines"
+
         return headlines(session)
     elif intent_name == "Next":
         return skip(session)
@@ -143,6 +157,7 @@ def headlines(session):
         session['attributes'] = {}
         session['attributes']['headline_index'] = 0
         session['attributes']['articles'] = articles
+
     elif 'articles' not in session['attributes']:
 
         res = api.get_top_headlines()
@@ -154,7 +169,22 @@ def headlines(session):
         articles = res['articles']
         session['attributes']['headline_index'] = 0
         session['attributes']['articles'] = articles
+
     else:
+
+        if 'intent' in session['attributes']:
+            print('intent in headlines:', session['attributes']['intent'])
+            if 'intent' == 'switchToHeadlines':
+                session['attributes']['intent'] = "Headlines"
+                session['attributes'].pop('articles')
+                print('after pop', session)
+                return headlines(session)
+            elif 'intent' == 'switchToSource':
+                session['attributes']['intent'] = "sourcedNews"
+                session['attributes'].pop('articles')
+                return headlines(session)
+
+
         # End if out of headlines, there's probably a better way to handle this
         # but this works for now
         if session['attributes']['headline_index'] >= len(session['attributes']['articles']):
@@ -170,31 +200,40 @@ def headlines(session):
     msg += article['title']
     msg += ". "
     msg += REPROMPT_HEADLINE
-        
 
     articlesToEmail = []
 
     if 'articlesToEmail' in session['attributes']:
         articlesToEmail = session['attributes']['articlesToEmail']
+
+    intent_name = ""
+    if 'intent' in session['attributes']:
+        intent_name = session['attributes']['intent']
+    else:
+        intent_name = "Headlines"
 
     attributes = {
         "state": globals()['STATE'], 
         "headline_index": session['attributes']['headline_index'],
         "articles": session['attributes']['articles'],
         "dialogStatus": "readTitle",
-        'articlesToEmail': articlesToEmail
+        'articlesToEmail': articlesToEmail,
+        "intent": intent_name
     }
 
     return response(attributes, response_plain_text(msg, False))
 
 def ask_next_headline(session):
+
     articlesToEmail = []
 
     if 'articlesToEmail' in session['attributes']:
         articlesToEmail = session['attributes']['articlesToEmail']
 
+    articles = session['attributes']['articles']
+    articleToSend = articles[session['attributes']['headline_index']]
 
-    articlesToEmail.append(session['attributes']['headline_index'])
+    articlesToEmail.append(articleToSend)
 
     attributes = {
         "state" : globals()['STATE'], 
@@ -203,6 +242,14 @@ def ask_next_headline(session):
         "dialogStatus": "readEmail",
         "articlesToEmail": articlesToEmail
     }
+
+    if 'formattedSource' in session['attributes']:
+        attributes["formattedSource"]= session['attributes']['formattedSource']
+
+    if 'intent' in session['attributes']:
+        attributes['intent'] = session['attributes']['intent']
+    else:
+        attributes['intent'] = "Headlines"
 
     if session['attributes']['headline_index'] >= len(session['attributes']['articles']):
         return do_stop()
@@ -234,8 +281,6 @@ def read_headline(session):
     
     msg = ""
     article = articles[session['attributes']['headline_index']]
-
-    # for article in articles:
     
     if article['description'] is not None:
         msg += article['description']
@@ -249,8 +294,6 @@ def read_headline(session):
 
     if 'articlesToEmail' in session['attributes']:
         articlesToEmail = session['attributes']['articlesToEmail']
-    else:
-        articlesToEmail.append(session['attributes']['headline_index'])
 
     attributes = {
         "state" : globals()['STATE'], 
@@ -260,11 +303,21 @@ def read_headline(session):
         "articlesToEmail": articlesToEmail
     }
 
+    if 'formattedSource' in session['attributes']:
+        attributes["formattedSource"] = session['attributes']['formattedSource']
+
+
+    if 'intent' in session['attributes']:
+        attributes['intent'] = session['attributes']['intent']
+    else:
+        attributes['intent'] = "Headlines"
+
     return response(attributes, response_plain_text(msg, False))
+
 
 def sourcedNews(request, intent, session):
 
-    if 'attributes' not in session or 'articles' not in session['attributes']:
+    if ('attributes' not in session) or 'articles' not in session['attributes']:
 
         requestedSource = intent['slots']['source']['value']
 
@@ -299,11 +352,22 @@ def sourcedNews(request, intent, session):
 
         articles = res['articles']
 
-        session['attributes'] = {}
+        if 'attributes' not in session:
+            session['attributes'] = {}
         session['attributes']['headline_index'] = 0
         session['attributes']['articles'] = articles
+        session['attributes']['formattedSource'] = formattedSource
 
     else:
+        if 'formattedSource' not in session['attributes']:
+            session['attributes'].pop('articles')
+            return sourcedNews(request, intent, session)
+
+        if session['attributes']['formattedSource'] != intent['slots']['source']['value']:
+            session['attributes'].pop('articles')
+            return sourcedNews(request, intent, session)
+
+
         # End if out of headlines, there's probably a better way to handle this
         # but this works for now
         if session['attributes']['headline_index'] == len(session['attributes']['articles']):
@@ -330,7 +394,9 @@ def sourcedNews(request, intent, session):
         "headline_index": session['attributes']['headline_index'],
         "articles": session['attributes']['articles'],
         "dialogStatus": "readTitle",
-        "articlesToEmail": articlesToEmail
+        "articlesToEmail": articlesToEmail,
+        "formattedSource": session['attributes']['formattedSource'],
+        "intent": "sourcedNews"
     }
 
     return response(attributes, response_plain_text(msg, False))
@@ -363,34 +429,35 @@ def do_stop(session):
         articles = session['attributes']['articles']
 
         msg += "<div align='center'>"
-        msg += "<a href='#' style='text-decoration: none; color: #000000;'>"
+        msg += "<a href='https://realnewsapp.github.io/' target='_blank' style='text-decoration: none; color: #000000;'>"
         msg += "<br>"
         msg += "<img src='https://realnewsapp.github.io/img/logo.png' style='max-width: 50%; height: auto;' />"
         msg += "<br><br><hr />"
         msg += "</a>"
         msg += "</div>"
 
-        for i in range(len(articles)):
-            if i in articlesToEmail:
-
-                msg += "<div>"
-                msg += "<a href=\"" + articles[i]['url'] + "\">"
-                msg += "<h2>" + articles[i]['title'] + "</h2>"
+        i = 0
+        for article in articlesToEmail:
+            msg += "<div>"
+            msg += "<a href=\"" + article['url'] + "\">"
+            msg += "<h2>" + article['title'] + "</h2>"
+            msg += "</a>"
+            msg += "<p>"
+            if  article['description'] is not None:
+                msg += article['description']
+            msg += "</p><br />"
+            if article['source']['name'] in sourcesDict:
+                msg += "<a href=\"" + sourcesDict[article['source']['name']]['url'] + "\">"
+                msg += article['source']['name']
                 msg += "</a>"
-                msg += "<p>"
-                if  articles[i]['description'] is not None:
-                    msg += articles[i]['description']
-                msg += "</p><br />"
-                if articles[i]['source']['name'] in sourcesDict:
-                    msg += "<a href=\"" + sourcesDict[articles[i]['source']['name']]['url'] + "\">"
-                    msg += articles[i]['source']['name']
-                    msg += "</a>"
-                else:
-                    msg += articles[i]['source']['name']
-                msg += "</div>"
+            else:
+                msg += article['source']['name']
+            msg += "</div>"
 
-                if i != len(articles) - 1:
-                    msg += "<hr />"
+            if i != len(articlesToEmail) - 1:
+                msg += "<hr />"
+
+            i += 1
 
         msg += HTML_MSG_2
 
