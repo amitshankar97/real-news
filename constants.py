@@ -33,6 +33,8 @@ NO_DESCRIPTION = "This article does not have a summary. Would you still like me 
 HELP_MESSAGE = ("You can say something like, \"Give me the headlines\" to get the headlines. "
                 "You can also ask for news from a source by saying, \""
                 "Give me the news from ESPN\". "
+                "To get news about a specific topic, you can say, \""
+                "Give me news about bitcoin\". "
                 "What would you like to do?")
 
 LOGIN_MESSAGE = "You need to login with Amazon before we can send you an email. Check the Alexa app for more details."
@@ -45,5 +47,9 @@ OUT_OF_REQUESTS = "Sorry! I can't make any more requests to the server right now
 USE_CARDS_FLAG = False
 
 STATE_START = "Start"
+
+SOURCE_NOT_FOUND = "Sorry. I couldn't find that source. What would you like to do?"
+
+NO_KEYWORD_NEWS = "Sorry. I couldn't find any news about "
 
 STATE = STATE_START

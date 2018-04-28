@@ -49,6 +49,7 @@
                     "name": "ListSources",
                     "slots": [],
                     "samples": [
+                        "give me a list of sources",
                         "list your sources",
                         "list the available sources",
                         "list sources",
