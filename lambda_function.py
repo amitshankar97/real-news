@@ -449,7 +449,12 @@ def keywordNews(request, intent, session):
 
         if res['totalResults'] == 0:
             msg = NO_KEYWORD_NEWS + keyword + '. What would you like to do?'
-            return response(session['attributes'], response_plain_text(msg, False))
+            
+            attributes = {}
+            if 'attributes' in session:
+                attributes = session['attributes']
+
+            return response(attributes, response_plain_text(msg, False))
 
 
         articles = res['articles']
