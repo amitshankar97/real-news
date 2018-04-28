@@ -424,9 +424,13 @@ def sourcedNews(request, intent, session):
     return response(attributes, response_plain_text(msg, False))
 
 def searchKeyword(keyword):
-    res = requests.get('https://newsapi.org/v2/everything?q='
-        + keyword +
-        '&apiKey=' + os.environ['API_KEY'], verify=False)
+    params = {
+                'q': keyword,
+                'language': 'en',
+                'apiKey': os.environ['API_KEY']
+            }
+
+    res = requests.get('https://newsapi.org/v2/everything', verify=False, params=params)
 
     return res.json()
 
