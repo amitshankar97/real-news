@@ -302,7 +302,7 @@ def read_headline(session):
     
     if article['description'] is not None:
         msg += article['description']
-        msg += " "
+        msg += ". "
         # msg += NEXT_HEADLINE
         msg += EMAIL_HEADLINE
     else:
@@ -430,7 +430,7 @@ def searchKeyword(keyword):
                 'apiKey': os.environ['API_KEY']
             }
 
-    res = requests.get('https://newsapi.org/v2/everything', verify=False, params=params)
+    res = requests.get('https://newsapi.org/v2/top-headlines', verify=False, params=params)
 
     return res.json()
 
