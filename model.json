@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "test news",
+            "invocationName": "real news",
             "intents": [
                 {
                     "name": "AMAZON.CancelIntent",
@@ -33,10 +33,7 @@
                     "slots": [
                         {
                             "name": "source",
-                            "type": "AMAZON.Organization",
-                            "samples": [
-                                "{source}"
-                            ]
+                            "type": "AMAZON.Organization"
                         }
                     ],
                     "samples": [
@@ -102,10 +99,7 @@
                     "slots": [
                         {
                             "name": "keyword",
-                            "type": "AMAZON.SearchQuery",
-                            "samples": [
-                                "{keyword}"
-                            ]
+                            "type": "AMAZON.SearchQuery"
                         }
                     ],
                     "samples": [
@@ -116,153 +110,9 @@
                         "give me the headlines about {keyword}",
                         "give me news about {keyword}"
                     ]
-                },
-                {
-                    "name": "CategoryNews",
-                    "slots": [
-                        {
-                            "name": "category",
-                            "type": "category",
-                            "samples": [
-                                "{category} news",
-                                "{category}"
-                            ]
-                        }
-                    ],
-                    "samples": [
-                        "{category} news",
-                        "{category} headlines",
-                        "give me {category} headlines",
-                        "give me {category} news"
-                    ]
                 }
             ],
-            "types": [
-                {
-                    "name": "category",
-                    "values": [
-                        {
-                            "name": {
-                                "value": "technology",
-                                "synonyms": [
-                                    "tech"
-                                ]
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "sports"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "science"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "health"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "general"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "entertainment"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "business"
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-        "dialog": {
-            "intents": [
-                {
-                    "name": "SourcedNews",
-                    "confirmationRequired": false,
-                    "prompts": {},
-                    "slots": [
-                        {
-                            "name": "source",
-                            "type": "AMAZON.Organization",
-                            "confirmationRequired": false,
-                            "elicitationRequired": true,
-                            "prompts": {
-                                "elicitation": "Elicit.Slot.54319040402.744684295511"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "keywordNews",
-                    "confirmationRequired": false,
-                    "prompts": {},
-                    "slots": [
-                        {
-                            "name": "keyword",
-                            "type": "AMAZON.SearchQuery",
-                            "confirmationRequired": false,
-                            "elicitationRequired": true,
-                            "prompts": {
-                                "elicitation": "Elicit.Slot.113498476275.1180775099952"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "CategoryNews",
-                    "confirmationRequired": false,
-                    "prompts": {},
-                    "slots": [
-                        {
-                            "name": "category",
-                            "type": "category",
-                            "confirmationRequired": false,
-                            "elicitationRequired": true,
-                            "prompts": {
-                                "elicitation": "Elicit.Slot.1343079063164.263311702622"
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-        "prompts": [
-            {
-                "id": "Elicit.Slot.54319040402.744684295511",
-                "variations": [
-                    {
-                        "type": "PlainText",
-                        "value": "What source would you like your news from?"
-                    }
-                ]
-            },
-            {
-                "id": "Elicit.Slot.113498476275.1180775099952",
-                "variations": [
-                    {
-                        "type": "PlainText",
-                        "value": "What would you like to search for?"
-                    }
-                ]
-            },
-            {
-                "id": "Elicit.Slot.1343079063164.263311702622",
-                "variations": [
-                    {
-                        "type": "PlainText",
-                        "value": "You can get business, tech, health, entertainment, general, health, science, sports or technology news. What would you like to do?"
-                    }
-                ]
-            }
-        ]
+            "types": []
+        }
     }
 }
