@@ -29,6 +29,8 @@ def on_intent(request, session):
     intent = request['intent']
     intent_name = request['intent']['name']
 
+    print('intent_name', intent_name)
+
 
     if 'dialogState' in request:
         #delegate to Alexa until dialog sequence is complete
@@ -40,31 +42,50 @@ def on_intent(request, session):
         return listSources(request)
     elif intent_name == "keywordNews":
         if 'attributes' in session:
-            if 'intent' in session['attributes']:
-                if session['attributes']['intent'] == "Headlines":
-                    session['attributes']['intent'] = "switchToKeyword"
-                else:
-                    session['attributes']['intent'] = "keywordNews"
+            # if 'intent' in session['attributes']:
+            #     if session['attributes']['intent'] == "Headlines":
+            #         session['attributes']['intent'] = "switchToKeyword"
+            #     else:
+            #         session['attributes']['intent'] = "keywordNews"
+            if 'articles' in session:
+                session['attributes'].pop('articles')
 
         return keywordNews(request, intent, session)
 
+
+    elif intent_name == "CategoryNews":
+        if 'attributes' in session:
+            # if 'intent' in session['attributes']:
+            #     if session['attributes']['intent'] == "Headlines":
+            #         session['attributes']['intent'] = "switchToKeyword"
+            #     else:
+            #         session['attributes']['intent'] = "keywordNews"
+            if 'articles' in session:
+                session['attributes'].pop('articles')
+
+        return categoryNews(request, intent, session)
+
     elif intent_name == "SourcedNews":
         if 'attributes' in session:
-            if 'intent' in session['attributes']:
-                if session['attributes']['intent'] == "Headlines":
-                    session['attributes']['intent'] = "switchToSource"
-                else:
-                    session['attributes']['intent'] = "sourcedNews"
+            # if 'intent' in session['attributes']:
+            #     if session['attributes']['intent'] == "Headlines":
+            #         session['attributes']['intent'] = "switchToSource"
+            #     else:
+            #         session['attributes']['intent'] = "sourcedNews"
+            if 'articles' in session:
+                session['attributes'].pop('articles')
 
         return sourcedNews(request, intent, session)
 
     elif intent_name == "Headlines":
         if 'attributes' in session:
-            if 'intent' in session['attributes']:
-                if session['attributes']['intent'] == "sourcedNews":
-                    session['attributes']['intent'] = "switchToHeadlines"
-                else:
-                    session['attributes']['intent'] = "Headlines"
+            # if 'intent' in session['attributes']:
+            #     if session['attributes']['intent'] == "sourcedNews":
+            #         session['attributes']['intent'] = "switchToHeadlines"
+            #     else:
+            #         session['attributes']['intent'] = "Headlines"
+            if 'articles' in session:
+                session['attributes'].pop('articles')
 
         return headlines(session)
     elif intent_name == "Next":
@@ -117,6 +138,7 @@ def on_intent(request, session):
         return do_help()
 
 
+# --------------- List Available Sources -----------------
 def listSources(request):
     """ Get the names of all the sources from the dictionary"""
     sourceNames = sourcesDict.keys()
@@ -136,6 +158,7 @@ def listSources(request):
 
     return response({}, response_plain_text(msg, True))
 
+# --------------- Navigation controls -----------------
 def skip(session):
     if 'attributes' not in session:
         return response({}, response_plain_text("", True))
@@ -155,7 +178,7 @@ def previous(session):
 
     return headlines(session)
 
-
+# --------------- Headlines entry point -----------------
 def headlines(session):
     if 'attributes' not in session:
         res = api.get_top_headlines()
@@ -183,21 +206,23 @@ def headlines(session):
 
     else:
 
-        if 'intent' in session['attributes']:
-            print('intent in headlines:', session['attributes']['intent'])
-            if 'intent' == 'switchToHeadlines':
-                session['attributes']['intent'] = "Headlines"
-                session['attributes'].pop('articles')
-                print('after pop', session)
-                return headlines(session)
-            elif 'intent' == 'switchToSource':
-                session['attributes']['intent'] = "sourcedNews"
-                session['attributes'].pop('articles')
-                return headlines(session)
-            elif 'intent' == 'switchToKeyword':
-                session['attributes']['intent'] = "keywordNews"
-                session['attributes'].pop('articles')
-                return headlines(session)
+        # if 'intent' in session['attributes']:
+        #     print('intent in headlines:', session['attributes']['intent'])
+        #     if 'intent' == 'switchToHeadlines':
+        #         session['attributes']['intent'] = "Headlines"
+        #         session['attributes'].pop('articles')
+        #         print('after pop', session)
+        #         return headlines(session)
+        #     elif 'intent' == 'switchToSource':
+        #         session['attributes']['intent'] = "sourcedNews"
+        #         session['attributes'].pop('articles')
+        #         return headlines(session)
+        #     elif 'intent' == 'switchToKeyword':
+        #         session['attributes']['intent'] = "keywordNews"
+        #         session['attributes'].pop('articles')
+        #         return headlines(session)
+        #         
+        #
 
 
         # End if out of headlines, there's probably a better way to handle this
@@ -238,6 +263,7 @@ def headlines(session):
 
     return response(attributes, response_plain_text(msg, False))
 
+# --------------- Add to email list and prompt user -----------------
 def ask_next_headline(session):
 
     articlesToEmail = []
@@ -276,6 +302,8 @@ def ask_next_headline(session):
 
     return response(attributes, response_plain_text(alexaMsg, False))
 
+
+# --------------- Read description -----------------
 def read_headline(session):
     if 'articles' not in session['attributes']:
 
@@ -336,7 +364,7 @@ def read_headline(session):
 
     return response(attributes, response_plain_text(msg, False))
 
-
+# --------------- Sourced News -----------------
 def sourcedNews(request, intent, session):
 
     if ('attributes' not in session) or 'articles' not in session['attributes']:
@@ -435,6 +463,7 @@ def searchKeyword(keyword):
     return res.json()
 
 
+# --------------- Keyword Search -----------------
 def keywordNews(request, intent, session):
 
     if ('attributes' not in session) or 'articles' not in session['attributes']:
@@ -449,7 +478,7 @@ def keywordNews(request, intent, session):
 
         if res['totalResults'] == 0:
             msg = NO_KEYWORD_NEWS + keyword + '. What would you like to do?'
-            
+
             attributes = {}
             if 'attributes' in session:
                 attributes = session['attributes']
@@ -496,20 +525,133 @@ def keywordNews(request, intent, session):
     if 'articlesToEmail' in session['attributes']:
         articlesToEmail = session['attributes']['articlesToEmail']
 
+
     attributes = {
         "state": globals()['STATE'], 
         "headline_index": session['attributes']['headline_index'],
         "articles": session['attributes']['articles'],
         "dialogStatus": "readTitle",
         "articlesToEmail": articlesToEmail,
-        "keyword": session['attributes']['keyword'],
         "intent": "keywordNews"
     }
+
+    if 'category' in session['attributes']:
+        attributes['category'] = session['attributes']['category']
+
+    if 'keyword' in session['attributes']:
+        attributes['keyword'] = session['attributes']['keyword']
+
 
     return response(attributes, response_plain_text(msg, False))
 
 
+# --------------- Search by category -----------------
+def searchCategory(category):
+    params = {
+                'category': category,
+                'language': 'en',
+                'country': 'us',
+                'apiKey': os.environ['API_KEY']
+            }
 
+    res = requests.get('https://newsapi.org/v2/top-headlines', verify=False, params=params)
+
+    return res.json()
+
+
+# --------------- Get news by category -----------------
+def categoryNews(request, intent, session):
+
+    if ('attributes' not in session) or 'articles' not in session['attributes']:
+
+        category = intent['slots']['category']['value']
+
+        res = searchCategory(category)
+
+        if(res['status'] == "error"):
+            if(res['code'] == 'apiKeyExhausted' or res['code'] == 'rateLimited'):
+                return response({}, response_plain_text(OUT_OF_REQUESTS, True))
+
+        if res['totalResults'] == 0 or category not in availableCategories:
+            msg = NO_CATEGORY_NEWS
+
+            for i in range(len(availableCategories)):
+                if i == 0:
+                    msg += availableCategories[i]
+                elif i == len(availableCategories) - 1:
+                    msg += ' and ' + availableCategories[i]
+                else:
+                    msg += ', ' + availableCategories[i]
+
+            msg += '. What would you like to do?'
+            
+            attributes = {}
+            if 'attributes' in session:
+                attributes = session['attributes']
+
+            return response(attributes, response_plain_text(msg, False))
+
+
+        articles = res['articles']
+
+        if 'attributes' not in session:
+            session['attributes'] = {}
+        session['attributes']['headline_index'] = 0
+        session['attributes']['articles'] = articles
+        session['attributes']['category'] = category
+
+    else:
+        if 'category' not in session['attributes']:
+            session['attributes'].pop('articles')
+            return categoryNews(request, intent, session)
+
+        if session['attributes']['category'] != intent['slots']['category']['value']:
+            session['attributes'].pop('articles')
+            return categoryNews(request, intent, session)
+
+
+        # End if out of headlines, there's probably a better way to handle this
+        # but this works for now
+        if session['attributes']['headline_index'] == len(session['attributes']['articles']):
+            return do_stop(session)
+
+        articles = session['attributes']['articles']
+    
+    msg = ""
+    article = articles[session['attributes']['headline_index']]
+
+    # for article in articles:
+    msg += "From " + article['source']['name'] + ": "
+    msg += article['title']
+    msg += ". "
+    msg += REPROMPT_HEADLINE
+        
+    articlesToEmail = []
+
+
+    attributes = {
+        "state": globals()['STATE'], 
+        "headline_index": session['attributes']['headline_index'],
+        "articles": session['attributes']['articles'],
+        "dialogStatus": "readTitle",
+        "articlesToEmail": articlesToEmail,
+        "intent": "CategoryNews"
+    }
+
+    if 'articlesToEmail' in session['attributes']:
+        articlesToEmail = session['attributes']['articlesToEmail']
+
+    if 'category' in session['attributes']:
+        attributes['category'] = session['attributes']['category']
+
+    if 'keyword' in session['attributes']:
+        attributes['keyword'] = session['attributes']['keyword']
+
+
+    return response(attributes, response_plain_text(msg, False))
+
+
+# --------------- Exit out of skill and email -----------------
 
 def do_stop(session):
     """  stop the app """
