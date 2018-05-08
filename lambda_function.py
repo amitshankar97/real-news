@@ -390,6 +390,9 @@ def sourcedNews(request, intent, session):
                 break
 
         if found == False:
+            attributes = {}
+            if 'attributes' in session:
+                attributes = session['attributes']
             return response(session['attributes'], response_plain_text(SOURCE_NOT_FOUND, False))
 
         res = api.get_top_headlines(sources=formattedSource)
@@ -659,57 +662,57 @@ def do_stop(session):
     """ check if there are any articles to be emailed """
 
     user_email = ""
+    if 'attributes' in session:
+        if 'articlesToEmail' in session['attributes']:
+            articlesToEmail = session['attributes']['articlesToEmail']
 
-    if 'articlesToEmail' in session['attributes']:
-        articlesToEmail = session['attributes']['articlesToEmail']
+            # Exit w/o email if there's nothing to email
+            if not articlesToEmail:
+                attributes = {"state":globals()['STATE']}
+                return response(attributes, response_plain_text(EXIT_SKILL_MESSAGE, True))
 
-        # Exit w/o email if there's nothing to email
-        if not articlesToEmail:
-            attributes = {"state":globals()['STATE']}
-            return response(attributes, response_plain_text(EXIT_SKILL_MESSAGE, True))
-
-        if 'accessToken' not in session['user']:
-            attributes = {"state":globals()['STATE']}
-            return response(attributes, response_card_login('Real News - Email Setup', LOGIN_MESSAGE, True))
-        else:
-            request_data = requests.get("https://api.amazon.com/user/profile?access_token=" + session['user']['accessToken'])
-            request_json = request_data.json()
-            user_email = request_json['email']
-
-        msg = HTML_MSG_1
-
-        articles = session['attributes']['articles']
-
-        msg += "<div align='center'>"
-        msg += "<a href='https://realnewsapp.github.io/' target='_blank' style='text-decoration: none; color: #000000;'>"
-        msg += "<br>"
-        msg += "<img src='https://realnewsapp.github.io/img/logo.png' style='max-width: 50%; height: auto;' />"
-        msg += "<br><br><hr />"
-        msg += "</a>"
-        msg += "</div>"
-
-        i = 0
-        for article in articlesToEmail:
-            msg += "<div>"
-            msg += "<a href=\"" + article['url'] + "\">"
-            msg += "<h2>" + article['title'] + "</h2>"
-            msg += "</a>"
-            msg += "<p>"
-            if  article['description'] is not None:
-                msg += article['description']
-            msg += "</p><br />"
-            if article['source']['name'] in sourcesDict:
-                msg += "<a href=\"" + sourcesDict[article['source']['name']]['url'] + "\">"
-                msg += article['source']['name']
-                msg += "</a>"
+            if 'accessToken' not in session['user']:
+                attributes = {"state":globals()['STATE']}
+                return response(attributes, response_card_login('Real News - Email Setup', LOGIN_MESSAGE, True))
             else:
-                msg += article['source']['name']
+                request_data = requests.get("https://api.amazon.com/user/profile?access_token=" + session['user']['accessToken'])
+                request_json = request_data.json()
+                user_email = request_json['email']
+
+            msg = HTML_MSG_1
+
+            articles = session['attributes']['articles']
+
+            msg += "<div align='center'>"
+            msg += "<a href='https://realnewsapp.github.io/' target='_blank' style='text-decoration: none; color: #000000;'>"
+            msg += "<br>"
+            msg += "<img src='https://realnewsapp.github.io/img/logo.png' style='max-width: 50%; height: auto;' />"
+            msg += "<br><br><hr />"
+            msg += "</a>"
             msg += "</div>"
 
-            if i != len(articlesToEmail) - 1:
-                msg += "<hr />"
+            i = 0
+            for article in articlesToEmail:
+                msg += "<div>"
+                msg += "<a href=\"" + article['url'] + "\">"
+                msg += "<h2>" + article['title'] + "</h2>"
+                msg += "</a>"
+                msg += "<p>"
+                if  article['description'] is not None:
+                    msg += article['description']
+                msg += "</p><br />"
+                if article['source']['name'] in sourcesDict:
+                    msg += "<a href=\"" + sourcesDict[article['source']['name']]['url'] + "\">"
+                    msg += article['source']['name']
+                    msg += "</a>"
+                else:
+                    msg += article['source']['name']
+                msg += "</div>"
 
-            i += 1
+                if i != len(articlesToEmail) - 1:
+                    msg += "<hr />"
+
+                i += 1
 
         msg += HTML_MSG_2
 
